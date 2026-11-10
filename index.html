@@ -127,6 +127,19 @@
   }
   .btn:hover { color: var(--text); border-color: var(--accent); }
 
+  /* 年度分类标题 */
+  .cat-head {
+    display: flex; align-items: center; gap: 10px;
+    margin: 22px 0 10px; padding-bottom: 8px;
+    border-bottom: 1px solid #334155;
+  }
+  .cat-head .cat-name { font-size: 16px; font-weight: 700; color: var(--accent); }
+  .cat-head .cat-progress { font-size: 12px; color: var(--muted); margin-left: auto; }
+  .cat-head .cat-bar {
+    width: 90px; height: 6px; background: #334155; border-radius: 3px; overflow: hidden;
+  }
+  .cat-head .cat-bar i { display: block; height: 100%; background: var(--accent2); width: 0; transition: width .3s; }
+
   .tip { text-align: center; color: var(--muted); font-size: 12px; margin-top: 16px; }
   .empty { text-align: center; color: var(--muted); padding: 40px 0; font-size: 14px; }
 </style>
@@ -166,6 +179,7 @@
     <div class="tab active" data-tab="daily">每日</div>
     <div class="tab" data-tab="weekly">每周</div>
     <div class="tab" data-tab="monthly">每月</div>
+    <div class="tab" data-tab="yearly">每年</div>
   </div>
 
   <div class="panel active" id="panel-daily"></div>
@@ -177,6 +191,10 @@
 
   <div class="panel" id="panel-monthly">
     <div id="monthlyList"></div>
+  </div>
+
+  <div class="panel" id="panel-yearly">
+    <div id="yearlyList"></div>
   </div>
 
   <div class="foot-actions">
@@ -224,6 +242,46 @@ const MONTHLY = [
   { name:"淘汰低利润、高风险业务", goal:"增加优质业务投入" }
 ];
 
+// ============ 年度清单数据（12 大类）============
+const YEARLY = [
+  { cat:"1. 公司战略与经营规划", items:[
+    "制定年度营业额目标","制定年度净利润目标","确定核心物流产品和国家市场","分析竞争对手及行业趋势","确定公司的差异化竞争优势","制定季度、月度经营目标","决定新业务、新航线、新市场是否投入"
+  ]},
+  { cat:"2. 市场营销与客户获取", items:[
+    "制定每月获客目标","管理官网 SEO、GEO、AI 搜索优化","管理百度、Google 等搜索广告","管理社交媒体和内容营销","开发外贸公司、工厂、跨境电商客户","建立客户转介绍机制","分析各渠道获客成本及成交率"
+  ]},
+  { cat:"3. 销售团队管理", items:[
+    "制定销售人员业绩目标","检查每日询价数量","检查报价及时率","检查客户跟进情况","分析报价成交率","管理重点客户及大客户","处理重大客户投诉和商务谈判","建立销售提成及激励制度"
+  ]},
+  { cat:"4. 物流产品与供应链管理", items:[
+    "开发优质船公司、航空公司资源","管理一级货代、庄家及同行供应商","开发海外代理及目的港合作伙伴","管理中国到全球各国物流专线","定期更新海运、空运价格","对比供应商价格和服务质量","评估各航线利润及竞争力","建立备用供应商体系"
+  ]},
+  { cat:"5. 运营与服务管理", items:[
+    "监督订舱、拖车、报关、仓储操作","检查货物进仓及出运情况","检查提单、报关资料准确性","跟踪货物运输状态","监控船期延误及异常货物","管理目的港清关及派送","处理货损、货差、延误等异常","建立客户服务标准"
+  ]},
+  { cat:"6. 财务与利润管理", items:[
+    "每日检查收款情况","检查应收账款和逾期账款","审核供应商付款","检查每票货物收入与成本","统计每票货物毛利","统计各业务部门利润","监控公司现金流","控制坏账和汇率风险"
+  ]},
+  { cat:"7. 人事与组织管理", items:[
+    "招聘关键岗位人才","制定岗位职责和工作流程","制定员工绩效考核制度","检查部门负责人工作成果","组织员工培训","建立人才晋升机制","优化部门人员配置"
+  ]},
+  { cat:"8. 客户关系与品牌管理", items:[
+    "建立客户分级制度","维护重点客户关系","定期回访老客户","分析客户流失原因","提高客户复购率","建立客户投诉处理机制","建立企业品牌及口碑"
+  ]},
+  { cat:"9. 风险与合规管理", items:[
+    "审核危险品及特殊货物运输规则","管理海关、报关及贸易合规风险","管理货物保险及运输责任","审核合同、报价及付款条款","控制客户信用风险","控制海外代理合作风险","建立突发事件处理机制"
+  ]},
+  { cat:"10. IT系统与数字化管理", items:[
+    "建立货代业务管理系统 TMS","建立客户管理系统 CRM","建立财务对账系统","建立运价数据库","建立客户在线询价系统","建立货物轨迹查询系统","实现销售、操作、财务数据联动","推动 AI 自动化办公"
+  ]},
+  { cat:"11. 海外市场与合作伙伴", items:[
+    "开发海外本地代理","建立海外清关资源","开发海外仓储和派送资源","分析各国物流市场需求","建立海外合作协议","评估海外市场投入产出比"
+  ]},
+  { cat:"12. 老板个人能力提升", items:[
+    "学习国际物流行业知识","学习财务和企业经营管理","学习销售与商务谈判","学习 AI 和数字化管理","研究竞争对手","建立行业人脉","培养管理层接班和授权能力"
+  ]}
+];
+
 // ============ 状态 ============
 const store = {
   get(k){ try { return JSON.parse(localStorage.getItem(k)); } catch(e){ return null; } },
@@ -233,6 +291,7 @@ const store = {
 function todayKey(){ return "bd-daily-" + new Date().toISOString().slice(0,10); }
 function weekKey(d){ d = d || new Date(); const start = new Date(d); start.setDate(d.getDate() - ((d.getDay()+6)%7)); return "bd-week-" + start.toISOString().slice(0,10); }
 function monthKey(){ return "bd-month-" + new Date().toISOString().slice(0,7); }
+function yearKey(){ return "bd-year-" + new Date().getFullYear(); }
 
 function getDailyState(){ const s = store.get(todayKey()); return Array.isArray(s)? s : new Array(DAILY.length).fill(false); }
 function setDailyState(a){ store.set(todayKey(), a); }
@@ -240,6 +299,8 @@ function getWeekState(){ const s = store.get(weekKey()); return Array.isArray(s)
 function setWeekState(a){ store.set(weekKey(), a); }
 function getMonthState(){ const s = store.get(monthKey()); return Array.isArray(s)? s : new Array(MONTHLY.length).fill(false); }
 function setMonthState(a){ store.set(monthKey(), a); }
+function getYearState(){ const s = store.get(yearKey()); return Array.isArray(s)? s : new Array(YEARLY.reduce((n,c)=>n+c.items.length,0)).fill(false); }
+function setYearState(a){ store.set(yearKey(), a); }
 
 // ============ 日期显示 ============
 const weekCN = ["星期日","星期一","星期二","星期三","星期四","星期五","星期六"];
@@ -359,6 +420,37 @@ function renderMonthly(){
   });
 }
 
+// ============ 每年面板 ============
+function renderYearly(){
+  const yst = getYearState();
+  const el = document.getElementById("yearlyList");
+  el.innerHTML = "";
+  let idx = 0;
+  YEARLY.forEach((grp)=>{
+    const done = grp.items.filter((_,k)=>yst[idx+k]).length;
+    const head = document.createElement("div");
+    head.className = "cat-head";
+    head.innerHTML = `
+      <span class="cat-name">${grp.cat}</span>
+      <div class="cat-bar"><i style="width:${done/grp.items.length*100}%"></i></div>
+      <span class="cat-progress">${done} / ${grp.items.length}</span>`;
+    el.appendChild(head);
+    grp.items.forEach((name, k)=>{
+      const i = idx + k;
+      const div = document.createElement("div");
+      div.className = "task" + (yst[i]?" done":"");
+      div.innerHTML = `
+        <div class="check">✓</div>
+        <div class="task-body">
+          <div class="task-top"><span class="task-name">${name}</span></div>
+        </div>`;
+      div.onclick = ()=>{ yst[i]=!yst[i]; setYearState(yst); renderYearly(); };
+      el.appendChild(div);
+    });
+    idx += grp.items.length;
+  });
+}
+
 // ============ 标签切换 ============
 document.querySelectorAll(".tab").forEach(t=>{
   t.onclick = ()=>{
@@ -395,6 +487,7 @@ renderDaily();
 renderWeekNav();
 renderWeekly();
 renderMonthly();
+renderYearly();
 renderProgress();
 </script>
 </body>

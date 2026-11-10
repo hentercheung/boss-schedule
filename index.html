@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>老板经营日程 · 打卡系统</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --card2: #273449;
+    --accent: #38bdf8;
+    --accent2: #34d399;
+    --warn: #fbbf24;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --done: #22c55e;
+    --radius: 14px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    background: linear-gradient(160deg, #0f172a 0%, #1a2439 100%);
+    min-height: 100vh;
+    color: var(--text);
+    padding-bottom: 60px;
+  }
+  .container { max-width: 860px; margin: 0 auto; padding: 24px 16px; }
+
+  /* 顶部 */
+  header {
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 12px; margin-bottom: 20px;
+  }
+  .title { font-size: 26px; font-weight: 700; letter-spacing: 1px; }
+  .title span { color: var(--accent); }
+  .date-box { text-align: right; }
+  .date-main { font-size: 18px; font-weight: 600; }
+  .date-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+  /* 今日进度卡 */
+  .progress-card {
+    background: var(--card); border-radius: var(--radius);
+    padding: 18px 22px; margin-bottom: 20px;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+    border: 1px solid #334155;
+  }
+  .progress-left { display: flex; align-items: center; gap: 18px; }
+  .ring { position: relative; width: 74px; height: 74px; }
+  .ring svg { transform: rotate(-90deg); }
+  .ring .pct {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700; color: var(--accent);
+  }
+  .progress-text .pt1 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .progress-text .pt2 { font-size: 13px; color: var(--muted); }
+  .streak {
+    background: var(--card2); border-radius: 10px; padding: 10px 18px;
+    text-align: center; border: 1px solid #3b4d6b;
+  }
+  .streak .num { font-size: 22px; font-weight: 700; color: var(--warn); }
+  .streak .lbl { font-size: 12px; color: var(--muted); }
+
+  /* 标签页 */
+  .tabs {
+    display: flex; gap: 8px; margin-bottom: 18px;
+    background: var(--card); padding: 6px; border-radius: 12px;
+    border: 1px solid #334155;
+  }
+  .tab {
+    flex: 1; padding: 10px 0; text-align: center; cursor: pointer;
+    border-radius: 9px; font-size: 15px; font-weight: 600; color: var(--muted);
+    transition: all .2s; user-select: none;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { background: var(--accent); color: #0f172a; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* 任务卡 */
+  .task {
+    background: var(--card); border: 1px solid #334155; border-radius: var(--radius);
+    margin-bottom: 12px; padding: 14px 18px;
+    display: flex; align-items: center; gap: 14px;
+    transition: all .2s; cursor: pointer;
+  }
+  .task:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .task.done { opacity: .65; border-color: var(--done); }
+  .task.done .task-name { text-decoration: line-through; color: var(--muted); }
+  .check {
+    width: 26px; height: 26px; border-radius: 8px; flex-shrink: 0;
+    border: 2px solid #475569; display: flex; align-items: center; justify-content: center;
+    font-size: 15px; color: transparent; transition: all .2s;
+  }
+  .task.done .check { background: var(--done); border-color: var(--done); color: #fff; }
+  .task-body { flex: 1; }
+  .task-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .task-name { font-size: 16px; font-weight: 600; }
+  .time-tag {
+    background: rgba(56,189,248,.15); color: var(--accent);
+    font-size: 12px; padding: 2px 10px; border-radius: 20px; font-weight: 600;
+  }
+  .day-tag {
+    background: rgba(251,191,36,.15); color: var(--warn);
+    font-size: 12px; padding: 2px 10px; border-radius: 20px; font-weight: 600;
+  }
+  .task-goal { font-size: 13px; color: var(--muted); margin-top: 5px; line-height: 1.5; }
+
+  /* 每周视图的星期选择 */
+  .week-nav { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+  .wn {
+    padding: 7px 14px; border-radius: 9px; cursor: pointer; font-size: 14px;
+    background: var(--card); border: 1px solid #334155; color: var(--muted);
+    transition: all .2s; user-select: none;
+  }
+  .wn:hover { color: var(--text); }
+  .wn.sel { background: var(--warn); color: #0f172a; border-color: var(--warn); font-weight: 700; }
+  .wn.today-hint { border-color: var(--accent); color: var(--accent); }
+
+  /* 重置按钮 */
+  .foot-actions { margin-top: 24px; display: flex; gap: 10px; justify-content: center; }
+  .btn {
+    background: var(--card); color: var(--muted); border: 1px solid #334155;
+    padding: 9px 20px; border-radius: 10px; cursor: pointer; font-size: 13px;
+    transition: all .2s;
+  }
+  .btn:hover { color: var(--text); border-color: var(--accent); }
+
+  .tip { text-align: center; color: var(--muted); font-size: 12px; margin-top: 16px; }
+  .empty { text-align: center; color: var(--muted); padding: 40px 0; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="title">📋 老板经营日程 <span>打卡</span></div>
+    <div class="date-box">
+      <div class="date-main" id="dateMain"></div>
+      <div class="date-sub" id="dateSub"></div>
+    </div>
+  </header>
+
+  <div class="progress-card">
+    <div class="progress-left">
+      <div class="ring">
+        <svg width="74" height="74">
+          <circle cx="37" cy="37" r="32" stroke="#334155" stroke-width="7" fill="none"/>
+          <circle id="ringBar" cx="37" cy="37" r="32" stroke="var(--accent)" stroke-width="7" fill="none"
+                  stroke-linecap="round" stroke-dasharray="201" stroke-dashoffset="201"/>
+        </svg>
+        <div class="pct" id="pct">0%</div>
+      </div>
+      <div class="progress-text">
+        <div class="pt1" id="progressTitle">今日进度</div>
+        <div class="pt2" id="progressDetail">0 / 0 项已完成</div>
+      </div>
+    </div>
+    <div class="streak">
+      <div class="num" id="streakNum">0</div>
+      <div class="lbl">连续打卡天数</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="daily">每日</div>
+    <div class="tab" data-tab="weekly">每周</div>
+    <div class="tab" data-tab="monthly">每月</div>
+  </div>
+
+  <div class="panel active" id="panel-daily"></div>
+
+  <div class="panel" id="panel-weekly">
+    <div class="week-nav" id="weekNav"></div>
+    <div id="weeklyList"></div>
+  </div>
+
+  <div class="panel" id="panel-monthly">
+    <div id="monthlyList"></div>
+  </div>
+
+  <div class="foot-actions">
+    <button class="btn" id="resetToday">重置今日打卡</button>
+    <button class="btn" id="exportData">导出打卡数据</button>
+  </div>
+
+  <div class="tip">数据自动保存在本机浏览器中 · 每日 0 点自动开启新一天的打卡</div>
+</div>
+
+<script>
+// ============ 日程数据 ============
+const DAILY = [
+  { t:"09:00", name:"查看公司经营日报", goal:"掌握营业额、利润、订单" },
+  { t:"09:30", name:"召开部门晨会", goal:"明确当天重点任务" },
+  { t:"10:00", name:"检查销售工作", goal:"销售看板 · 询价、报价、成交" },
+  { t:"11:00", name:"处理重点客户", goal:"重大客户、重点订单" },
+  { t:"13:30", name:"检查物流运营", goal:"船期、出货、异常" },
+  { t:"14:30", name:"检查市场推广", goal:"SEO、广告、获客" },
+  { t:"15:30", name:"供应商及合作伙伴", goal:"运价、资源、成本" },
+  { t:"16:30", name:"财务和资金检查", goal:"应收、应付、现金流" },
+  { t:"17:00", name:"检查各部门任务", goal:"发现问题、落实责任" },
+  { t:"17:30", name:"制定次日工作计划", goal:"确定明日重点" }
+];
+
+const WEEKLY = [
+  { day:"周一", name:"召开经营管理会议", goal:"确定本周目标" },
+  { day:"周二", name:"分析销售数据", goal:"客户开发及成交情况" },
+  { day:"周三", name:"分析物流专线", goal:"各条专线的成本和利润" },
+  { day:"周四", name:"检查网站营销", goal:"SEO、GEO、内容营销及广告效果" },
+  { day:"周五", name:"检查财务与绩效", goal:"财务、应收账款、员工绩效" },
+  { day:"周六", name:"研究竞争与机会", goal:"竞争对手、新国家市场和新产品机会" }
+];
+
+const MONTHLY = [
+  { name:"统计月度营业额、毛利、净利润", goal:"核心经营结果" },
+  { name:"统计新客户数量和老客户复购率", goal:"客户增长与留存" },
+  { name:"统计销售人员业绩排名", goal:"团队激励与差距" },
+  { name:"统计各国专线的利润排名", goal:"业务结构优化" },
+  { name:"统计各获客渠道的投入产出比", goal:"调整营销预算" },
+  { name:"检查员工工资、提成及绩效", goal:"薪酬兑现与公平" },
+  { name:"评估供应商及海外代理", goal:"供应商质量与成本" },
+  { name:"分析客户投诉和服务质量", goal:"服务改进" },
+  { name:"制定下个月经营计划", goal:"下月目标与资源" },
+  { name:"淘汰低利润、高风险业务", goal:"增加优质业务投入" }
+];
+
+// ============ 状态 ============
+const store = {
+  get(k){ try { return JSON.parse(localStorage.getItem(k)); } catch(e){ return null; } },
+  set(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
+};
+
+function todayKey(){ return "bd-daily-" + new Date().toISOString().slice(0,10); }
+function weekKey(d){ d = d || new Date(); const start = new Date(d); start.setDate(d.getDate() - ((d.getDay()+6)%7)); return "bd-week-" + start.toISOString().slice(0,10); }
+function monthKey(){ return "bd-month-" + new Date().toISOString().slice(0,7); }
+
+function getDailyState(){ const s = store.get(todayKey()); return Array.isArray(s)? s : new Array(DAILY.length).fill(false); }
+function setDailyState(a){ store.set(todayKey(), a); }
+function getWeekState(){ const s = store.get(weekKey()); return Array.isArray(s)? s : new Array(WEEKLY.length).fill(false); }
+function setWeekState(a){ store.set(weekKey(), a); }
+function getMonthState(){ const s = store.get(monthKey()); return Array.isArray(s)? s : new Array(MONTHLY.length).fill(false); }
+function setMonthState(a){ store.set(monthKey(), a); }
+
+// ============ 日期显示 ============
+const weekCN = ["星期日","星期一","星期二","星期三","星期四","星期五","星期六"];
+const now = new Date();
+document.getElementById("dateMain").textContent =
+  `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日`;
+document.getElementById("dateSub").textContent = weekCN[now.getDay()] + " · 今天该做什么一目了然";
+
+// ============ 打卡计算 ============
+function calcStreak(){
+  let n = 0;
+  const d = new Date();
+  // 今天未全完成也计入当天
+  for(let i=0;i<365;i++){
+    const key = "bd-daily-" + d.toISOString().slice(0,10);
+    const s = store.get(key);
+    const full = Array.isArray(s) && s.length === DAILY.length && s.every(x=>x);
+    if(full){ n++; } else if(i>0){ break; } else if(i===0 && !full){ break; }
+    d.setDate(d.getDate()-1);
+  }
+  return n;
+}
+
+function renderProgress(){
+  const st = getDailyState();
+  const done = st.filter(Boolean).length, total = st.length;
+  const pct = Math.round(done/total*100);
+  document.getElementById("pct").textContent = pct + "%";
+  document.getElementById("ringBar").style.strokeDashoffset = 201 - 201*pct/100;
+  document.getElementById("progressDetail").textContent = `${done} / ${total} 项已完成`;
+  document.getElementById("progressTitle").textContent = pct===100 ? "🎉 今日全部完成，漂亮！" : "今日进度";
+  document.getElementById("streakNum").textContent = calcStreak();
+}
+
+// ============ 每日面板 ============
+function renderDaily(){
+  const st = getDailyState();
+  const el = document.getElementById("panel-daily");
+  el.innerHTML = "";
+  DAILY.forEach((item,i)=>{
+    const div = document.createElement("div");
+    div.className = "task" + (st[i]?" done":"");
+    div.innerHTML = `
+      <div class="check">✓</div>
+      <div class="task-body">
+        <div class="task-top">
+          <span class="time-tag">${item.t}</span>
+          <span class="task-name">${item.name}</span>
+        </div>
+        <div class="task-goal">目标：${item.goal}</div>
+      </div>`;
+    div.onclick = ()=>{ st[i]=!st[i]; setDailyState(st); renderDaily(); renderProgress(); };
+    el.appendChild(div);
+  });
+}
+
+// ============ 每周面板 ============
+let selWeekDay = Math.min(6, Math.max(0, (now.getDay()+6)%7)); // 周一=0
+function renderWeekNav(){
+  const nav = document.getElementById("weekNav");
+  nav.innerHTML = "";
+  WEEKLY.forEach((w,i)=>{
+    const s = document.createElement("div");
+    s.className = "wn" + (i===selWeekDay?" sel":"") + (i===((now.getDay()+6)%7)?" today-hint":"");
+    s.textContent = w.day;
+    s.onclick = ()=>{ selWeekDay=i; renderWeekNav(); renderWeekly(); };
+    nav.appendChild(s);
+  });
+  const all = document.createElement("div");
+  all.className = "wn" + (selWeekDay===7?" sel":"");
+  all.textContent = "全部";
+  all.onclick = ()=>{ selWeekDay=7; renderWeekNav(); renderWeekly(); };
+  nav.appendChild(all);
+}
+function renderWeekly(){
+  const wst = getWeekState();
+  const el = document.getElementById("weeklyList");
+  el.innerHTML = "";
+  const list = selWeekDay===7 ? WEEKLY.map((w,i)=>({item:w, idx:i})) : WEEKLY.map((w,i)=>({item:w, idx:i})).filter(x => x.idx===selWeekDay);
+  if(list.length===0){ el.innerHTML = '<div class="empty">这一天没有安排，好好休息 🙂</div>'; return; }
+  list.forEach(({item:it, idx:i})=>{
+    const div = document.createElement("div");
+    div.className = "task" + (wst[i]?" done":"");
+    div.innerHTML = `
+      <div class="check">✓</div>
+      <div class="task-body">
+        <div class="task-top">
+          <span class="day-tag">${it.day}</span>
+          <span class="task-name">${it.name}</span>
+        </div>
+        <div class="task-goal">目标：${it.goal}</div>
+      </div>`;
+    div.onclick = ()=>{ wst[i]=!wst[i]; setWeekState(wst); renderWeekly(); };
+    el.appendChild(div);
+  });
+}
+
+// ============ 每月面板 ============
+function renderMonthly(){
+  const mst = getMonthState();
+  const el = document.getElementById("monthlyList");
+  el.innerHTML = "";
+  MONTHLY.forEach((it,i)=>{
+    const div = document.createElement("div");
+    div.className = "task" + (mst[i]?" done":"");
+    div.innerHTML = `
+      <div class="check">✓</div>
+      <div class="task-body">
+        <div class="task-top">
+          <span class="day-tag">本月</span>
+          <span class="task-name">${it.name}</span>
+        </div>
+        <div class="task-goal">目标：${it.goal}</div>
+      </div>`;
+    div.onclick = ()=>{ mst[i]=!mst[i]; setMonthState(mst); renderMonthly(); };
+    el.appendChild(div);
+  });
+}
+
+// ============ 标签切换 ============
+document.querySelectorAll(".tab").forEach(t=>{
+  t.onclick = ()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    document.querySelectorAll(".panel").forEach(x=>x.classList.remove("active"));
+    t.classList.add("active");
+    document.getElementById("panel-"+t.dataset.tab).classList.add("active");
+    renderProgress();
+  };
+});
+
+// ============ 其他按钮 ============
+document.getElementById("resetToday").onclick = ()=>{
+  if(confirm("确定重置今日所有打卡记录？")){
+    setDailyState(new Array(DAILY.length).fill(false));
+    renderDaily(); renderProgress();
+  }
+};
+document.getElementById("exportData").onclick = ()=>{
+  const data = {};
+  for(let i=0;i<localStorage.length;i++){
+    const k = localStorage.key(i);
+    if(k && k.startsWith("bd-")) data[k] = JSON.parse(localStorage.getItem(k));
+  }
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "打卡数据备份.json";
+  a.click();
+};
+
+// ============ 初始化 ============
+renderDaily();
+renderWeekNav();
+renderWeekly();
+renderMonthly();
+renderProgress();
+</script>
+</body>
+</html>
